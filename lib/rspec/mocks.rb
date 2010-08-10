@@ -177,6 +177,7 @@ module RSpec
 
       def setup(includer)
         require 'rspec/mocks/extensions/object'
+        require 'rspec/mocks/extensions/class'
         require 'rspec/mocks/spec_methods'
         (class << includer; self; end).class_eval do
           include RSpec::Mocks::ExampleMethods
