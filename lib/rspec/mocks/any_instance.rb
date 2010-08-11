@@ -12,11 +12,6 @@ module RSpec
           self
         end
 
-        def stub!(*args, &block)
-          @messages << [args.unshift(:stub!), block]
-          self
-        end
-
         def with(*args, &block)
           @messages << [args.unshift(:with), block]
           self
@@ -35,11 +30,12 @@ module RSpec
       end
 
       def any_instance
-        __decorate_new! unless respond_to?(:__new__)
+        __decorate_new! unless respond_to?(:__new_without_any_instance__)
         __recorder
       end
 
-      private
+    private
+
       def __recorder
         @__recorder ||= AnyInstance::Recorder.new
       end
@@ -47,11 +43,10 @@ module RSpec
       def __decorate_new!
         self.class_eval do
           class << self
-            alias_method :__new_without_any_instance_stubbed__, :new
-
+            alias_method :__new_without_any_instance__, :new
 
             def new(*args, &blk)
-              instance = __new_without_any_instance_stubbed__(*args, &blk)
+              instance = __new_without_any_instance__(*args, &blk)
               __recorder.playback!(instance)
               instance
             end
