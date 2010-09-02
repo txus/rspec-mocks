@@ -30,7 +30,7 @@ module RSpec
       end
 
       def any_instance
-        __decorate_new! unless respond_to?(:__new_without_any_instance__)
+        __decorate_new! unless respond_to?("obfuscated_by_rspec_mocks__new")
         __recorder
       end
 
@@ -42,14 +42,15 @@ module RSpec
 
       def __decorate_new!
         self.class_eval do
-          class << self
-            alias_method :__new_without_any_instance__, :new
-
-            def new(*args, &blk)
-              instance = __new_without_any_instance__(*args, &blk)
-              __recorder.playback!(instance)
-              instance
-            end
+          stub(:new) do |*args|
+            blk = if Proc === args.last
+                      args.pop
+                    else
+                      nil
+                    end
+            instance = send("obfuscated_by_rspec_mocks__new", *args, &blk)
+            __recorder.playback!(instance)
+            instance
           end
         end
       end
