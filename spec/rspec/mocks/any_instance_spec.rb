@@ -27,7 +27,7 @@ module RSpec
           end
 
           it "returns the same computed value for calls on different instances" do
-            klass.any_instance.stub(:foo) { Object.new }
+            klass.any_instance.stub(:foo) { 3 + 4 }
             klass.new.foo.should == klass.new.foo
           end
         end
