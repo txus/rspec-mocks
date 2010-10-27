@@ -505,6 +505,36 @@ module RSpec
         mock.message.should == :response
       end
 
+      describe "#call_original" do
+
+        it "calls the original method" do
+          string = "STRING"
+          string.should_receive(:downcase).twice.and_return do
+            call_original 
+          end
+          2.times { string.downcase.should == "string" }
+        end
+
+        it "calls the original method with arguments" do
+          string = "string with whitespace"
+          string.should_receive(:split).with(" ").and_return do |separator|
+            call_original(separator)
+          end
+
+          string.split(" ").should == ["string", "with", "whitespace"]
+        end
+
+        it "calls the original method with arguments and a block" do
+          string = "string"
+          block = Proc.new { 3 + 4 }
+          string.should_receive(:tap).with(&block).and_return do |blk|
+            call_original(&blk)
+          end
+          string.tap(&block).should == "string"
+        end
+
+      end
+
     end
 
     describe "a mock message receiving a block" do

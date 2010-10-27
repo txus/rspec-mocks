@@ -20,9 +20,26 @@ module RSpec
             existing_private_instance_method
           end
 
+          def existing_instance_method_with_arguments(a,b)
+            existing_private_instance_method_with_arguments(a,b)
+          end
+
+          def existing_instance_method_with_arguments_and_block(a,b,&block)
+            existing_private_instance_method_with_arguments_and_block(a,b,&block)
+          end
+
           private
           def existing_private_instance_method
             :original_value
+          end
+
+          def existing_private_instance_method_with_arguments(a,b)
+            a+b
+          end
+
+          def existing_private_instance_method_with_arguments_and_block(a,b,&block)
+            a+b
+            block.call
           end
         end
         @instance = @class.new
@@ -180,6 +197,41 @@ module RSpec
         @stub.stub(:something).with("a","b","c").and_return { |a,b,c| c+b+a }
         @stub.something("a","b","c").should == "cba"
         @stub.rspec_verify
+      end
+
+      describe "#call_original inside a return block" do
+
+        it "calls the original method" do
+          @instance.stub(:existing_instance_method) do
+            call_original 
+          end
+          @instance.existing_instance_method.should == :original_value
+        end
+
+        it "calls the original method in a block with arguments" do
+          @instance.stub(:existing_instance_method_with_arguments).with("a","b").and_return do |a,b|
+            call_original(a,b)
+          end
+          @instance.existing_instance_method_with_arguments("a","b").should == "ab"
+        end
+
+        it "calls the original method in a block with arguments and another block" do
+          block = Proc.new { 3 + 4 }
+          @instance.stub(:existing_instance_method_with_arguments_and_block).with("a","b",&block).and_return do |a,b,blk|
+            call_original(a,b,&blk)
+          end
+          @instance.existing_instance_method_with_arguments_and_block("a","b",&block).should == 7
+        end
+
+        it "raises a MockExpectationError if trying to call an unexisting original method" do
+          @stub.stub(:some_method).and_return do
+            call_original
+          end
+          expect {
+            @stub.some_method
+          }.to raise_error(MockExpectationError, "Cannot call_original if there is no original method")
+        end
+
       end
     end
     

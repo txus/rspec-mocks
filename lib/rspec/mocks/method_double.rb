@@ -1,6 +1,7 @@
 module RSpec
   module Mocks
     class MethodDouble < Hash
+
       attr_reader :method_name
 
       def initialize(object, method_name, proxy)
@@ -72,6 +73,11 @@ module RSpec
         @stashed = true
       end
 
+      def call_original(*args, &block)
+        raise MockExpectationError, "Cannot call_original if there is no original method" unless @object.respond_to?(stashed_method_name)
+        @object.send(stashed_method_name, *args, &block)
+      end
+
       def define_proxy_method
         method_name = @method_name
         visibility_for_method = "#{visibility} :#{method_name}"
@@ -118,7 +124,7 @@ module RSpec
         expectation = if existing_stub = stubs.first
           existing_stub.build_child(expected_from, block, 1, opts)
         else
-          MessageExpectation.new(error_generator, expectation_ordering, expected_from, @method_name, block, 1, opts)
+          MessageExpectation.new(error_generator, expectation_ordering, expected_from, @method_name, block, 1, self, opts)
         end
         expectations << expectation
         expectation
@@ -133,7 +139,7 @@ module RSpec
 
       def add_stub(error_generator, expectation_ordering, expected_from, opts={}, &implementation)
         configure_method
-        stub = MessageExpectation.new(error_generator, expectation_ordering, expected_from, @method_name, nil, :any, opts, &implementation)
+        stub = MessageExpectation.new(error_generator, expectation_ordering, expected_from, @method_name, nil, :any, self, opts, &implementation)
         stubs.unshift stub
         stub
       end

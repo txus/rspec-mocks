@@ -8,9 +8,10 @@ module RSpec
       attr_accessor :error_generator
       protected :error_generator, :error_generator=
       
-      def initialize(error_generator, expectation_ordering, expected_from, sym, method_block, expected_received_count=1, opts={}, &implementation)
+      def initialize(error_generator, expectation_ordering, expected_from, sym, method_block, expected_received_count=1, method_double = self, opts={}, &implementation)
         @error_generator = error_generator
         @error_generator.opts = opts
+        @method_double = method_double
         @expected_from = expected_from
         @sym = sym
         @method_block = method_block
@@ -182,9 +183,19 @@ module RSpec
         # Ruby 1.9 - when we set @return_block to return values
         # regardless of arguments, any arguments will result in
         # a "wrong number of arguments" error
-        @return_block.arity == 0 ? @return_block.call : @return_block.call(*args)
+        #
+        # We execute instance_exec on method_double, which has a reference to
+        # the original method. This way we can call `call_original` anywhere
+        # inside the return block and it will call the original stashed method.
+        #
+        if @return_block.arity == 0
+          @method_double.instance_exec(&@return_block)
+        else
+          @method_double.instance_exec(*args, &@return_block)
+        end
+        #@return_block.arity == 0 ? @return_block.call : @return_block.call(*args)
       end
-      
+
       def clone_args_to_yield(*args)
         @args_to_yield = args.clone
         @args_to_yield_were_cloned = true
