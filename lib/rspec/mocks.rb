@@ -1,6 +1,7 @@
 require 'rspec/mocks/framework'
 require 'rspec/mocks/version'
 require 'rspec/mocks/spec_methods'
+require 'rspec/mocks/bulk_doubles'
 
 module RSpec
   # == Test Doubles
